@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrowdSafe Monitor</title>
+    <style>
+        :root {
+            --bg: #f4efe7;
+            --card: #fffdf9;
+            --ink: #18242f;
+            --soft: #6e7b87;
+            --accent: #0e7c86;
+            --accent-strong: #07555c;
+            --danger: #b3362d;
+            --danger-soft: #fdeceb;
+            --border: #d7cfc4;
+            --shadow: 0 18px 40px rgba(24, 36, 47, 0.09);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(14, 124, 134, 0.18), transparent 35%),
+                linear-gradient(180deg, #f8f3eb 0%, var(--bg) 100%);
+            min-height: 100vh;
+        }
+
+        .shell {
+            width: min(1180px, calc(100% - 32px));
+            margin: 32px auto 48px;
+        }
+
+        .hero {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3rem);
+            letter-spacing: 0.02em;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 840px;
+            color: var(--soft);
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 22px;
+        }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: baseline;
+            margin-bottom: 16px;
+        }
+
+        .card-head h2,
+        .card h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .muted {
+            color: var(--soft);
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        label {
+            display: grid;
+            gap: 6px;
+            font-size: 0.95rem;
+            color: var(--soft);
+        }
+
+        label.full {
+            grid-column: 1 / -1;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 0.95rem;
+            background: #fff;
+        }
+
+        button,
+        .link-button {
+            border: 0;
+            border-radius: 999px;
+            padding: 11px 18px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover,
+        .link-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .secondary {
+            background: #e7f4f5;
+            color: var(--accent-strong);
+        }
+
+        .ghost {
+            background: #efe9df;
+            color: #6a5646;
+        }
+
+        .danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .banner {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: #eef7f8;
+            color: var(--accent-strong);
+            display: none;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--soft);
+        }
+
+        .state {
+            display: inline-flex;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .RUNNING { background: #ddf4e1; color: #1d6b2d; }
+        .STARTING { background: #eef7f8; color: var(--accent-strong); }
+        .STOPPING { background: #fff1d8; color: #9b5d07; }
+        .ERROR { background: var(--danger-soft); color: var(--danger); }
+        .STOPPED { background: #efe9df; color: #6a5646; }
+
+        .stack {
+            display: grid;
+            gap: 20px;
+        }
+
+        .link {
+            color: var(--accent-strong);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 920px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <h1>Real-Time Crowd Detection and Alert Console</h1>
+            <p>
+                Configure an area, connect a camera or video stream, set the safe person limit,
+                and the system will time-stamp crowd events, save alert snapshots, and create an
+                email alert when the count goes above the allowed threshold.
+            </p>
+        </section>
+
+        <div id="banner" class="banner"></div>
+
+        <section class="grid">
+            <article class="card">
+                <div class="card-head">
+                    <h2 id="form-title">Add Monitoring Area</h2>
+                    <span id="form-mode" class="muted">Create mode</span>
+                </div>
+
+                <form id="area-form">
+                    <label>
+                        Area name
+                        <input id="name" required placeholder="Main Gate">
+                    </label>
+                    <label>
+                        Safe quantity
+                        <input id="threshold" type="number" min="1" required placeholder="20">
+                    </label>
+                    <label class="full">
+                        Location description
+                        <input id="location_description" placeholder="North entrance, building A">
+                    </label>
+                    <label class="full">
+                        Video source
+                        <input id="video_source" required placeholder="0 for webcam, RTSP URL, or local video path">
+                    </label>
+                    <label>
+                        Authority email
+                        <input id="authority_email" type="email" required placeholder="security@example.com">
+                    </label>
+                    <label>
+                        Alert cooldown seconds
+                        <input id="alert_cooldown_seconds" type="number" min="30" value="300">
+                    </label>
+                    <label>
+                        ROI X
+                        <input id="roi_x" type="number" min="0" placeholder="Optional">
+                    </label>
+                    <label>
+                        ROI Y
+                        <input id="roi_y" type="number" min="0" placeholder="Optional">
+                    </label>
+                    <label>
+                        ROI Width
+                        <input id="roi_width" type="number" min="1" placeholder="Optional">
+                    </label>
+                    <label>
+                        ROI Height
+                        <input id="roi_height" type="number" min="1" placeholder="Optional">
+                    </label>
+                    <label class="full">
+                        <div class="actions">
+                            <button id="submit-button" class="primary" type="submit">Save Area</button>
+                            <button id="cancel-edit-button" class="ghost" type="button" hidden>Cancel Edit</button>
+                        </div>
+                    </label>
+                </form>
+            </article>
+
+            <section class="stack">
+                <article class="card">
+                    <h2>Monitoring Status</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Area</th>
+                                    <th>State</th>
+                                    <th>Last Count</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="areas-body">
+                                <tr>
+                                    <td colspan="5" class="muted">No areas configured yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>Recent Alerts</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Area</th>
+                                    <th>Count</th>
+                                    <th>Email</th>
+                                    <th>Snapshot</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alerts-body">
+                                <tr>
+                                    <td colspan="5" class="muted">No alerts yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+        </section>
+    </main>
+
+    <script>
+        const areaForm = document.getElementById("area-form");
+        const formTitle = document.getElementById("form-title");
+        const formMode = document.getElementById("form-mode");
+        const submitButton = document.getElementById("submit-button");
+        const cancelEditButton = document.getElementById("cancel-edit-button");
+        const areasBody = document.getElementById("areas-body");
+        const alertsBody = document.getElementById("alerts-body");
+        const banner = document.getElementById("banner");
+
+        const formFields = {
+            name: document.getElementById("name"),
+            location_description: document.getElementById("location_description"),
+            video_source: document.getElementById("video_source"),
+            threshold: document.getElementById("threshold"),
+            authority_email: document.getElementById("authority_email"),
+            alert_cooldown_seconds: document.getElementById("alert_cooldown_seconds"),
+            roi_x: document.getElementById("roi_x"),
+            roi_y: document.getElementById("roi_y"),
+            roi_width: document.getElementById("roi_width"),
+            roi_height: document.getElementById("roi_height")
+        };
+
+        let editingAreaId = null;
+        let currentAreas = new Map();
+
+        function showBanner(message, isError = false) {
+            banner.textContent = message;
+            banner.style.display = "block";
+            banner.style.background = isError ? "#fdeceb" : "#eef7f8";
+            banner.style.color = isError ? "#b3362d" : "#07555c";
+            clearTimeout(showBanner.timeoutId);
+            showBanner.timeoutId = window.setTimeout(() => {
+                banner.style.display = "none";
+            }, 5000);
+        }
+
+        function numericOrNull(value) {
+            return value === "" ? null : Number(value);
+        }
+
+        function statusBadge(state) {
+            return `<span class="state ${state}">${state}</span>`;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        function buildPayload() {
+            return {
+                name: formFields.name.value.trim(),
+                location_description: formFields.location_description.value.trim(),
+                video_source: formFields.video_source.value.trim(),
+                threshold: Number(formFields.threshold.value),
+                authority_email: formFields.authority_email.value.trim(),
+                alert_cooldown_seconds: Number(formFields.alert_cooldown_seconds.value),
+                roi_x: numericOrNull(formFields.roi_x.value),
+                roi_y: numericOrNull(formFields.roi_y.value),
+                roi_width: numericOrNull(formFields.roi_width.value),
+                roi_height: numericOrNull(formFields.roi_height.value)
+            };
+        }
+
+        function resetForm() {
+            editingAreaId = null;
+            areaForm.reset();
+            formFields.alert_cooldown_seconds.value = "300";
+            formTitle.textContent = "Add Monitoring Area";
+            formMode.textContent = "Create mode";
+            submitButton.textContent = "Save Area";
+            cancelEditButton.hidden = true;
+        }
+
+        function startEdit(areaId) {
+            const area = currentAreas.get(areaId);
+            if (!area) {
+                showBanner("Unable to load that area for editing.", true);
+                return;
+            }
+
+            editingAreaId = areaId;
+            formFields.name.value = area.name;
+            formFields.location_description.value = area.location_description || "";
+            formFields.video_source.value = area.video_source;
+            formFields.threshold.value = area.threshold;
+            formFields.authority_email.value = area.authority_email;
+            formFields.alert_cooldown_seconds.value = area.alert_cooldown_seconds;
+            formFields.roi_x.value = area.roi_x ?? "";
+            formFields.roi_y.value = area.roi_y ?? "";
+            formFields.roi_width.value = area.roi_width ?? "";
+            formFields.roi_height.value = area.roi_height ?? "";
+            formTitle.textContent = `Edit ${area.name}`;
+            formMode.textContent = "Edit mode";
+            submitButton.textContent = "Update Area";
+            cancelEditButton.hidden = false;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        async function request(url, options = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.detail || "Request failed.");
+            }
+            return response.json();
+        }
+
+        async function loadDashboard() {
+            const [areas, statuses, alerts] = await Promise.all([
+                request("/api/areas"),
+                request("/api/status"),
+                request("/api/alerts?limit=12")
+            ]);
+
+            currentAreas = new Map(areas.map((area) => [area.id, area]));
+            const statusMap = new Map(statuses.map((entry) => [entry.area_id, entry]));
+
+            if (!areas.length) {
+                areasBody.innerHTML = `<tr><td colspan="5" class="muted">No areas configured yet.</td></tr>`;
+            } else {
+                areasBody.innerHTML = areas.map((area) => {
+                    const status = statusMap.get(area.id) || { state: "STOPPED", last_count: "-", updated_at: "-" };
+                    const locationDescription = escapeHtml(area.location_description || "No description");
+                    const videoSource = escapeHtml(area.video_source);
+                    const lastError = status.last_error ? `<span>${escapeHtml(status.last_error)}</span>` : "";
+                    return `
+                        <tr>
+                            <td>
+                                <strong>${escapeHtml(area.name)}</strong><br>
+                                <span class="muted">${locationDescription}</span><br>
+                                <span class="muted">Threshold: ${area.threshold}</span><br>
+                                <span class="muted">Source: ${videoSource}</span>
+                            </td>
+                            <td>${statusBadge(status.state || "STOPPED")}</td>
+                            <td>${status.last_count ?? "-"}</td>
+                            <td class="muted">
+                                ${status.last_checked_at || status.updated_at || "-"}<br>
+                                ${lastError}
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <button class="secondary" data-action="start" data-id="${area.id}">Start</button>
+                                    <button class="ghost" data-action="edit" data-id="${area.id}">Edit</button>
+                                    <button class="danger" data-action="stop" data-id="${area.id}">Stop</button>
+                                    <button class="danger" data-action="delete" data-id="${area.id}">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join("");
+            }
+
+            if (!alerts.length) {
+                alertsBody.innerHTML = `<tr><td colspan="5" class="muted">No alerts yet.</td></tr>`;
+            } else {
+                alertsBody.innerHTML = alerts.map((alert) => `
+                    <tr>
+                        <td>${alert.created_at}</td>
+                        <td>
+                            <strong>${escapeHtml(alert.area_name)}</strong><br>
+                            <span class="muted">${escapeHtml(alert.status)}</span>
+                        </td>
+                        <td>${alert.people_count} / ${alert.threshold}</td>
+                        <td>
+                            <strong>${escapeHtml(alert.email_status)}</strong><br>
+                            <span class="muted">${escapeHtml(alert.email_error || "Delivered or skipped cleanly.")}</span>
+                        </td>
+                        <td>
+                            ${alert.image_path ? `<a class="link" href="/api/alerts/${alert.id}/snapshot" target="_blank" rel="noreferrer">Open snapshot</a>` : `<span class="muted">No image</span>`}
+                        </td>
+                    </tr>
+                `).join("");
+            }
+        }
+
+        areaForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const payload = buildPayload();
+            const isEditing = editingAreaId !== null;
+            const url = isEditing ? `/api/areas/${editingAreaId}` : "/api/areas";
+            const method = isEditing ? "PUT" : "POST";
+
+            try {
+                await request(url, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                resetForm();
+                showBanner(isEditing ? "Area updated successfully." : "Area saved. You can start monitoring now.");
+                await loadDashboard();
+            } catch (error) {
+                showBanner(error.message, true);
+            }
+        });
+
+        cancelEditButton.addEventListener("click", () => {
+            resetForm();
+            showBanner("Edit cancelled.");
+        });
+
+        document.addEventListener("click", async (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLButtonElement)) {
+                return;
+            }
+
+            const action = target.dataset.action;
+            const areaId = Number(target.dataset.id);
+            if (!action || !areaId) {
+                return;
+            }
+
+            if (action === "edit") {
+                startEdit(areaId);
+                return;
+            }
+
+            if (action === "delete") {
+                const area = currentAreas.get(areaId);
+                const confirmed = window.confirm(`Delete ${area?.name || "this area"} and its saved alerts?`);
+                if (!confirmed) {
+                    return;
+                }
+            }
+
+            try {
+                const url = action === "delete"
+                    ? `/api/areas/${areaId}`
+                    : `/api/areas/${areaId}/monitor/${action}`;
+                const method = action === "delete" ? "DELETE" : "POST";
+                const result = await request(url, { method });
+
+                if (action === "delete" && editingAreaId === areaId) {
+                    resetForm();
+                }
+
+                showBanner(result.message);
+                await loadDashboard();
+            } catch (error) {
+                showBanner(error.message, true);
+            }
+        });
+
+        resetForm();
+        loadDashboard().catch((error) => showBanner(error.message, true));
+        window.setInterval(() => {
+            loadDashboard().catch((error) => showBanner(error.message, true));
+        }, 5000);
+    </script>
+</body>
+</html>

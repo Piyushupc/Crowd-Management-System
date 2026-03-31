@@ -1,0 +1,1 @@
+"""Crowd monitoring application package."""
