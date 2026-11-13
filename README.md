@@ -1,82 +1,53 @@
 # CrowdSafe Monitor
 
-A Python application for monitoring people counts in configured areas and generating alerts when a configured crowd threshold is exceeded.
+CrowdSafe Monitor is a computer-vision starter application for monitoring people in a defined area. It processes a camera or video source, compares the detected count with an administrator-defined threshold, records alerts, and can notify a configured authority by email.
 
-> **Project status:** Starter implementation. The current detector uses OpenCV's HOG people detector. YOLO-based detection, tracking, queue-backed processing, and production deployment are future improvements—not current features.
+> **Project status:** This repository currently uses OpenCV's HOG people detector as its baseline. It is a prototype/starter implementation, not a validated safety-critical crowd-management system.
 
-## Features
+## Current capabilities
 
-- Configure monitored areas, camera sources, safe-count thresholds, authority email addresses, and optional regions of interest.
-- Read from a webcam, camera index, RTSP/HTTP stream, or local video file.
-- Count detected people using the OpenCV HOG detector.
-- Persist timestamped alerts in SQLite.
-- Save annotated snapshots for triggered alerts.
-- Send notifications through SMTP when configured.
-- View monitoring status and alert history through the local dashboard.
+- Configure monitored areas, camera sources, safe-count thresholds, and notification email addresses.
+- Process webcam, RTSP, local video, or supported camera-index sources.
+- Optionally define a region of interest for monitoring.
+- Record timestamped alerts in SQLite.
+- Save annotated snapshots when a threshold is exceeded.
+- Send notifications through configured SMTP settings.
+- Review monitoring status and recent alerts through the application dashboard.
 
-## Technology stack
+## Technology
 
-- Python 3.10+
-- FastAPI and Uvicorn
-- OpenCV
-- SQLite
-- SMTP
-- pytest
+- Python, FastAPI, OpenCV, SQLite, SMTP
 
-## How it works
-
-1. An administrator configures an area and its camera source.
-2. The monitor reads frames from the configured source.
-3. The HOG detector identifies people in each frame.
-4. The application compares the count with the area's configured threshold.
-5. When the threshold is exceeded, it records an alert and snapshot, then attempts an email notification if SMTP is configured.
+Check the source and dependency files for exact runtime requirements and supported configuration options.
 
 ## Run locally
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-uvicorn app.main:app --reload
-```
+1. Clone the repository and enter the project directory.
+2. Create and activate a virtual environment.
+3. Install dependencies from `requirements.txt`.
+4. Configure camera and SMTP settings using the mechanism documented in the source.
+5. Start the FastAPI application with the entry point and command used by this repository.
 
-Open http://127.0.0.1:8000 in your browser.
+Review configuration before exposing the service publicly.
 
-Configure SMTP values in `.env` before expecting email delivery. Keep real credentials out of Git.
+## Important limitations
 
-## Tests
+- HOG detection can be affected by camera angle, lighting, occlusion, and crowd density.
+- A people count is not a reliable measure of crowd safety or flow by itself.
+- RTSP availability, camera health, notification delivery, and alert latency need operational monitoring.
+- SQLite and synchronous notification handling are starter-level choices, not necessarily suitable for high-volume deployment.
 
-```bash
-pytest
-```
+## Recommended next steps
 
-## Configuration notes
+- Evaluate a modern detector such as YOLO on representative footage; document the model, dataset, confidence threshold, and measured precision/recall before claiming improved detection.
+- Add multi-object tracking and measure count stability across frames.
+- Move long-running notification work to a queue and add retry/dead-letter handling.
+- Add Docker-based setup, automated tests, structured logs, and health checks.
+- Evaluate false positives/negatives under realistic lighting, occlusion, and camera placement.
 
-- Use `0` for the default webcam or another camera index for a local camera.
-- Use an RTSP/HTTP URL for a network camera.
-- Use a local video path when testing without a live camera.
-- Configure an ROI to restrict counting to a relevant portion of the frame.
+## Safety and privacy
 
-## Current limitations
-
-- HOG is a baseline detector and can be less accurate in dense or occluded crowds.
-- Detection quality depends on camera angle, lighting, resolution, and scene conditions.
-- Camera reconnection, health monitoring, and high-volume notification delivery need further hardening.
-- SQLite is suitable for a starter/local deployment, not necessarily a multi-instance production deployment.
-
-## Roadmap
-
-- Evaluate a modern detector such as YOLO on representative footage.
-- Add object tracking and counting rules to reduce duplicate detections.
-- Move notification work to a background queue.
-- Add camera health checks, structured logging, and monitoring metrics.
-- Add Docker-based deployment and integration tests.
-- Report precision/recall and counting error on a documented evaluation set.
-
-## Responsible use
-
-Use cameras only with appropriate authorization, notice, and privacy safeguards. Avoid collecting or retaining identifiable footage unless it is necessary and legally permitted.
+Do not use this prototype as the sole basis for emergency decisions. Obtain appropriate consent and authorization for camera use, restrict access to snapshots and recordings, define retention periods, and protect credentials outside source control.
 
 ## Author
 
